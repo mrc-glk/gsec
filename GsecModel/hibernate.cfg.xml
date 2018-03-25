@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<hibernate-configuration  xmlns="urn:nhibernate-configuration-2.2" >
+
+  <session-factory>
+
+    <property name="dialect">NHibernate.Spatial.Dialect.PostGis20Dialect,NHibernate.Spatial.PostGis</property>
+    <property name="connection.connection_string">Server=localhost;Database=gsecdb;User ID=gsecu;Password=tester;</property>
+
+  </session-factory>
+
+</hibernate-configuration>

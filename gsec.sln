@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gsec", "gsec\gsec.csproj", "{EE188B5A-6F40-4A24-A606-5246EBE85B3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GsecModel", "GsecModel\GsecModel.csproj", "{399DB724-8318-4E7E-82A8-DF7E1A773E21}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE188B5A-6F40-4A24-A606-5246EBE85B3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE188B5A-6F40-4A24-A606-5246EBE85B3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE188B5A-6F40-4A24-A606-5246EBE85B3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE188B5A-6F40-4A24-A606-5246EBE85B3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{399DB724-8318-4E7E-82A8-DF7E1A773E21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{399DB724-8318-4E7E-82A8-DF7E1A773E21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{399DB724-8318-4E7E-82A8-DF7E1A773E21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{399DB724-8318-4E7E-82A8-DF7E1A773E21}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1CDB3F62-D898-47A1-88E0-AC98A74F1844}
+	EndGlobalSection
+EndGlobal

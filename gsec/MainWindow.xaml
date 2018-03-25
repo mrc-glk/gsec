@@ -1,0 +1,198 @@
+﻿<Window x:Class="gsec.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
+        xmlns:local="clr-namespace:gsec"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="600" Width="800">
+
+    <Grid Name="MainGrid">
+        <esri:MapView x:Name="GsecMapView">
+            <esri:MapView.Overlays>
+                <esri:OverlayItemsControl>
+                    <!-- from ESRI developer forum -->
+                    <Grid x:Name="popupRanger" 
+                          esri:MapView.ViewOverlayAnchor="{Binding EsriPosition}" 
+                          HorizontalAlignment="Right" Visibility="Collapsed" VerticalAlignment="Top" MaxWidth="200">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Background="#CC000000" BorderThickness="1,1,1,0" Margin="0,0,0,-1" BorderBrush="White" Grid.ColumnSpan="2">
+                            <StackPanel Margin="20">
+                                <TextBlock FontWeight="Bold" Foreground="White">
+                                    <Run Text="Ranger "></Run>
+                                    <Run Text="{Binding Name}"></Run>
+                                </TextBlock>
+                                <Button x:Name="btnPopupRangerDriveTo" Content="Drive to" Click="btnPopupRangerDriveTo_Click"/>
+                                <Button x:Name="btnPopupRangerClose" Content="Close" Click="btnPopupRangerClose_Click"/>
+                            </StackPanel>
+                        </Border>
+                        <Path StrokeThickness="1" Fill="#CC000000" Stroke="White" Stretch="Fill" HorizontalAlignment="Left" Data="M0,0 L0,1 1,0" Grid.Row="1" />
+                        <Path StrokeThickness="1" Fill="#CC000000" Stroke="White" Stretch="Fill" VerticalAlignment="Top" Data="M0,0 L1,0" Grid.Row="1" Grid.Column="1" />
+                    </Grid>
+                    
+                </esri:OverlayItemsControl>
+            </esri:MapView.Overlays>
+        </esri:MapView>
+
+
+        <!-- Margin="480,10,30,120" -->
+        <Expander Name="expMenu" Header="Administration" Margin="480,10,30,120"  Expanded="expMenu_Expanded" Collapsed="expMenu_Collapsed">
+            <StackPanel Name="expMenuPanel" IsHitTestVisible="False" Margin="0,10,0,0">
+                <ListBox SelectedIndex="1">
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expSimulation" Header="Simulation">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="3*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Routing algorithm" Margin="0,5"/>
+                                    <ComboBox Name="comboRoutingAlgo" ItemsSource="{Binding RoutingAlgorithms.Keys}" SelectedIndex="0" 
+                                              SelectionChanged="comboRoutingAlgo_SelectionChanged"
+                                              Margin="5,5" Grid.Column="1"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="6*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Time scale" Grid.Column="0" Margin="0,0"/>
+                                    <Slider x:Name="sldTimeScale"  Value="{Binding TimeScale}" 
+                                            Orientation="Horizontal" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
+                                            AutoToolTipPlacement="BottomRight" Minimum="1" Maximum="240" Grid.Column="1"
+                                            Ticks="1,5,10,20,30,60,90,120,180,240"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expLayers" Header="Layers">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="3*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Basemap" Margin="0,5"/>
+                                    <ComboBox Name="comboBasemap" ItemsSource="{Binding BasemapDict.Keys}" SelectedIndex="1" 
+                                              SelectionChanged="comboBasemap_SelectionChanged" SelectedValue="comboBasemap_Selected" 
+                                              Margin="5,5" Grid.Column="1"/>
+                                   
+                                </Grid>
+                                <StackPanel Margin="5,5">
+                                    <CheckBox Name="chkboxRoads" IsChecked="True" Checked="chkboxRoads_Checked" Unchecked="chkboxRoads_Checked">Roads</CheckBox>
+                                    <CheckBox Name="chkboxCrossings" IsChecked="True" Checked="chkboxCrossings_Checked" Unchecked="chkboxCrossings_Checked">Crossings</CheckBox>
+                                    <CheckBox Name="chkboxRangers" IsChecked="True" Checked="chkboxRangers_Checked" Unchecked="chkboxRangers_Checked">Rangers</CheckBox>
+                                    <CheckBox Name="chkboxInterlopers" IsChecked="True" Checked="chkboxInterlopers_Checked" Unchecked="chkboxInterlopers_Checked">Interlopers</CheckBox>
+                                    <CheckBox Name="chkboxSensors" IsChecked="True" Checked="chkboxSensors_Checked" Unchecked="chkboxSensors_Checked">Sensors</CheckBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expSensors" Header="Sensors">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="6*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Range" Grid.Column="0"/>
+                                    <Slider x:Name="sldSensorRange"  Value="{Binding SensorRange}" 
+                                            Orientation="Horizontal" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
+                                            AutoToolTipPlacement="BottomRight" Minimum="10" Maximum="50" Grid.Column="1"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Name="btnSensorAdd" Click="btnSensorAdd_Click" Content="Add sensor" Margin="5,2" Grid.Row="0" Grid.Column="0" />
+                                    <Button Name="btnSensorAddRandom" Click="btnSensorAddRandom_Click" Content="Add random" Margin="5,2" Grid.Row="0" Grid.Column="1"/>
+                                    <Button Name="btnSensorDel" Click="btnSensorDel_Click" Content="Remove sensor" Margin="5,2" Grid.Row="1" Grid.Column="0"/>
+                                    <Button Name="btnSensorDelAll" Click="btnSensorDelAll_Click" Content="Remove all" Margin="5,2" Grid.Row="1" Grid.Column="1"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expRangers" Header="Rangers">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="6*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Speed" Grid.Column="0"/>
+                                    <Slider x:Name="sldRangerSpeed"  Value="{Binding RangerSpeed}" 
+                                                Orientation="Horizontal" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
+                                                AutoToolTipPlacement="BottomRight" Minimum="10" Maximum="90" Grid.Column="1"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Name="btnRangerAdd" Click="btnRangerAdd_Click" Content="Add ranger" Margin="5,2" Grid.Row="0" Grid.Column="0"/>
+                                    <Button Name="btnRangerAddRandom" Click="btnRangerAddRandom_Click" Content="Add random" Margin="5,2" Grid.Row="0" Grid.Column="1"/>
+                                    <Button Name="btnRangerDel" Click="btnRangerDel_Click" Content="Remove ranger" Margin="5,2" Grid.Row="1" Grid.Column="0"/>
+                                    <Button Name="btnRangerDelAll" Click="btnRangerDelAll_Click" Content="Remove all" Margin="5,2" Grid.Row="1" Grid.Column="1"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expTopology" Header="Topology">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Name="btnBuildTopology" Click="btnBuildTopology_Click" Content="Build topology" Margin="5,2" Grid.Row="0" Grid.Column="0"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expPursuits" Header="Pursuits">
+                            <StackPanel Margin="5,5">
+                                <ListBox Name="lstboxPursuits">
+                                    <ListBoxItem Content="Unit 1"/>
+                                    <ListBoxItem Content="Unit 4"/>
+                                </ListBox>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                </ListBox>
+            </StackPanel>
+        </Expander>
+        <Button x:Name="btnExtent" Content="[  ]" ToolTip="Zoom to road network extent" HorizontalAlignment="Left" Margin="10,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnExtent_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnEditCancel" Content=" X " ToolTip="Cancel edit" HorizontalAlignment="Left" Margin="50,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnEditCancel_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnSelectionClear" Content=" . " ToolTip="Clear selection" HorizontalAlignment="Left" Margin="90,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnSelectionClear_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnSimulationStart" Content=" > " ToolTip="Start simulation" HorizontalAlignment="Left" Margin="130,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnSimulationStart_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnSimulationStop" Content=" | | " ToolTip="Stop simulation" HorizontalAlignment="Left" Margin="170,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnSimulationStop_Click" VerticalAlignment="Top" Width="28"/>
+
+    </Grid>
+</Window>
