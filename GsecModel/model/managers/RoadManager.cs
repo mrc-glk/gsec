@@ -11,9 +11,10 @@ namespace gsec.model.managers
         private static readonly RoadManager instance = new RoadManager();
 
         static RoadManager() { }
-        private RoadManager() { }
+        private RoadManager()
+        {
+        }
 
-        public override string GetTable() => "Road";
         public static RoadManager Instance { get => instance; }
     }
 }

@@ -10,19 +10,14 @@
     </id>
 
     <property name="Name" column="name"/>
-    <property name="State" column="state" type="RangerStateType"/>
-    <property name="Position" column="position">
+    <property name="RState" column="state" type="RangerStateType"/>
+    <property name="Position" column="geom">
       <type name="NHibernate.Spatial.Type.GeometryType, NHibernate.Spatial">
         <param name="srid">4326</param>
         <param name="subtype">POINT</param>
       </type>
     </property>
-    <property name="Route" column="route">
-      <type name="NHibernate.Spatial.Type.GeometryType, NHibernate.Spatial">
-        <param name="srid">4326</param>
-        <param name="subtype">LINE</param>
-      </type>
-    </property>
+    <many-to-one name="Route" column="routeid" cascade="save-update, delete" unique="true" class="SingleRoute" not-null="false"/>
 
   </class>
   

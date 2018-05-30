@@ -9,7 +9,7 @@ namespace gsec.ui.events
 {
     public class SensorSelectionEventArgs : EventArgs
     {
-        Sensor Sensor { get; set; }
+        public Sensor Sensor { get; set; }
 
         public SensorSelectionEventArgs(Sensor sensor)
         {

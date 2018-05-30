@@ -122,14 +122,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Stat.cs" />
+    <Compile Include="ui\Messages.cs" />
+    <Compile Include="ui\animations\AlarmAnimation.cs" />
+    <Compile Include="ui\animations\BaseAnimation.cs" />
+    <Compile Include="ui\animations\FineAnimation.cs" />
+    <Compile Include="ui\animations\PursuitAnimation.cs" />
+    <Compile Include="ui\animations\NewRouteAnimation.cs" />
     <Compile Include="ui\EditModeType.cs" />
     <Compile Include="ui\Engine.cs" />
     <Compile Include="ui\events\RangerSelectionEvent.cs" />
     <Compile Include="ui\events\SensorSelectionEvent.cs" />
+    <Compile Include="ui\GeneralRenderers.cs" />
     <Compile Include="ui\GeoUtil.cs" />
     <Compile Include="ui\GsecLayerExtensions.cs" />
     <Compile Include="ui\MajorTimer.cs" />
-    <Compile Include="ui\GeneralRenderers.cs" />
     <Compile Include="ui\layers\AbstractLayer.cs" />
     <Compile Include="ui\layers\InterloperLayer.cs" />
     <Compile Include="ui\layers\CrossingLayer.cs" />

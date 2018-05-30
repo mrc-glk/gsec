@@ -5,11 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.UI;
+using gsec.model.managers;
 using NetTopologySuite.Geometries;
 
 namespace gsec.model
 {
-    public class Road : IDisplayableGeoElement
+    public class Road : IDisplayableGeoElement, IPersistable
     {
         public virtual long ID { get; set; }
         public virtual Crossing Source { get; set; }
@@ -29,6 +30,21 @@ namespace gsec.model
         public override int GetHashCode()
         {
             return 1213502048 + ID.GetHashCode();
+        }
+
+        public void Delete()
+        {
+            RoadManager.Instance.Delete(this);
+        }
+
+        public void Create()
+        {
+            RoadManager.Instance.Create(this);
+        }
+
+        public void Update()
+        {
+            RoadManager.Instance.Update(this);
         }
     }
 }

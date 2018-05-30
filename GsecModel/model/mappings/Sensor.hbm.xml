@@ -9,7 +9,7 @@
       </generator>
     </id>
 
-    <property name="Position" column="position">
+    <property name="Position" column="geom">
       <type name="NHibernate.Spatial.Type.GeometryType, NHibernate.Spatial">
         <param name="srid">4326</param>
         <param name="subtype">POINT</param>

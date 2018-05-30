@@ -11,9 +11,10 @@ namespace gsec.model.managers
         private static readonly InterloperManager instance = new InterloperManager();
 
         static InterloperManager() { }
-        private InterloperManager() { }
+        private InterloperManager()
+        {
+        }
 
-        public override string GetTable() => "Interloper";
         public static InterloperManager Instance { get => instance; }
     }
 }

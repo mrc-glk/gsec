@@ -11,6 +11,8 @@ namespace gsec.ui.layers
 {
     public class CrossingLayer : AbstractLayer<Crossing>
     {
+        public List<Crossing> Leafs = new List<Crossing>();
+
         public CrossingLayer(List<Crossing> elements) : base(elements)
         {
         }
@@ -22,13 +24,7 @@ namespace gsec.ui.layers
             foreach (Crossing crossing in Elements)
             {
                 GenerateGraphicFor(crossing);
-                BaseOverlay.Graphics.Add(crossing.Graphic);
             }
-        }
-
-        public override void RemoveElement(Crossing element)
-        {
-            throw new NotImplementedException();
         }
 
         public override void Select(Crossing element)
@@ -44,9 +40,9 @@ namespace gsec.ui.layers
         protected override void GenerateGraphicFor(Crossing element)
         {
             MapPoint position = element.Position.ToEsriPoint();
-            Graphic graphic = new Graphic(position, GeneralRenderers.CrossingSymbol);
-            element.Graphic = graphic;
-
+            element.Graphic = new Graphic(position, GeneralRenderers.CrossingSymbol);
+            Console.WriteLine("generated graphi for crossing {0}", element.ID);
+            BaseOverlay.Graphics.Add(element.Graphic);
         }
     }
 }

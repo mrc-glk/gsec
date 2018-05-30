@@ -11,9 +11,10 @@ namespace gsec.model.managers
         private static readonly SensorManager instance = new SensorManager();
 
         static SensorManager() { }
-        private SensorManager() { }
+        private SensorManager()
+        {
+        }
 
-        public override string GetTable() => "Sensor";
         public static SensorManager Instance { get => instance; }
     }
 }

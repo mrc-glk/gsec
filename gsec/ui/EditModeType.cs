@@ -18,5 +18,6 @@ namespace gsec.ui
         SensorDel,
         InterloperAdd,
         InterloperDel,
+        InterloperDriveTo,
     }
 }

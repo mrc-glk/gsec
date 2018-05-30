@@ -12,6 +12,8 @@ namespace gsec.ui.layers
 {
     public class InterloperLayer : AbstractLayer<Interloper>
     {
+        public bool ShowOnlyWithinSensorRange { get; set; } = false;
+
         public InterloperLayer(List<Interloper> elements) : base(elements)
         {
         }
@@ -23,35 +25,36 @@ namespace gsec.ui.layers
             foreach (Interloper interloper in Elements)
             {
                 GenerateGraphicFor(interloper);
-                BaseOverlay.Graphics.Add(interloper.Graphic);
             }
         }
 
-        public override void AddElement(MapPoint position)
+        protected override Interloper AddElementInternal(MapPoint position)
         {
             Interloper interloper = new Interloper();
             interloper.Position = position.ToNtsPoint();
+            interloper.Create();
+
+            GenerateGraphicFor(interloper);
+            Elements.Add(interloper);
             
-            long id = InterloperManager.Instance.Create(interloper);
-            if (id != -1)
-            {
-                GenerateGraphicFor(interloper);
-                BaseOverlay.Graphics.Add(interloper.Graphic);
-                Elements.Add(interloper);
-            }
+            return interloper;
         }
 
-        public override void RemoveElement(Interloper element)
+        protected override void RemoveElementInternal(Interloper element)
         {
             BaseOverlay.Graphics.Remove(element.Graphic);
-            InterloperManager.Instance.Delete(element);
+            Elements.Remove(element);
+            element.Delete();
         }
 
         protected override void GenerateGraphicFor(Interloper element)
         {
             MapPoint position = element.Position.ToEsriPoint();
-            Graphic graphic = new Graphic(position, GeneralRenderers.InterloperSymbol);
-            element.Graphic = graphic;
+            element.Graphic = new Graphic(position, GeneralRenderers.InterloperPicSymbol);
+            BaseOverlay.Graphics.Add(element.Graphic);
+
+            if (ShowOnlyWithinSensorRange != false)
+                element.Graphic.IsVisible = false;
         }
     }
 }

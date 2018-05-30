@@ -6,7 +6,7 @@
         xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
         xmlns:local="clr-namespace:gsec"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="800">
+        Title="MainWindow" Height="600" Width="800" MinHeight="600" MinWidth="800">
 
     <Grid Name="MainGrid">
         <esri:MapView x:Name="GsecMapView">
@@ -37,15 +37,40 @@
                         <Path StrokeThickness="1" Fill="#CC000000" Stroke="White" Stretch="Fill" HorizontalAlignment="Left" Data="M0,0 L0,1 1,0" Grid.Row="1" />
                         <Path StrokeThickness="1" Fill="#CC000000" Stroke="White" Stretch="Fill" VerticalAlignment="Top" Data="M0,0 L1,0" Grid.Row="1" Grid.Column="1" />
                     </Grid>
-                    
+
+                    <Grid x:Name="popupSensor" 
+                          esri:MapView.ViewOverlayAnchor="{Binding EsriPosition}" 
+                          HorizontalAlignment="Right" Visibility="Collapsed" VerticalAlignment="Top" MaxWidth="200">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Background="#CC000000" BorderThickness="1,1,1,0" Margin="0,0,0,-1" BorderBrush="White" Grid.ColumnSpan="2">
+                            <StackPanel Margin="20">
+                                <TextBlock FontWeight="Bold" Foreground="White">
+                                    <Run Text="Sensor "></Run>
+                                    <Run Text="{Binding ID}"></Run>
+                                </TextBlock>
+                                <Button x:Name="btnPopupSensorRaiseAlarm" Content="Raise alarm" Click="btnPopupSensorRaiseAlarm_Click"/>
+                                <Button x:Name="btnPopupSensorClose" Content="Close" Click="btnPopupSensorClose_Click"/>
+                            </StackPanel>
+                        </Border>
+                        <Path StrokeThickness="1" Fill="#CC000000" Stroke="White" Stretch="Fill" HorizontalAlignment="Left" Data="M0,0 L0,1 1,0" Grid.Row="1" />
+                        <Path StrokeThickness="1" Fill="#CC000000" Stroke="White" Stretch="Fill" VerticalAlignment="Top" Data="M0,0 L1,0" Grid.Row="1" Grid.Column="1" />
+                    </Grid>
+
                 </esri:OverlayItemsControl>
             </esri:MapView.Overlays>
         </esri:MapView>
 
 
         <!-- Margin="480,10,30,120" -->
-        <Expander Name="expMenu" Header="Administration" Margin="480,10,30,120"  Expanded="expMenu_Expanded" Collapsed="expMenu_Collapsed">
-            <StackPanel Name="expMenuPanel" IsHitTestVisible="False" Margin="0,10,0,0">
+        <Expander Name="expMenu" Header="Administration" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10" Width="280" Opacity="0.9" Expanded="expMenu_Expanded" Collapsed="expMenu_Collapsed">
+            <StackPanel Name="expMenuPanel" IsHitTestVisible="False" Margin="0,10,0,0" CanVerticallyScroll="True">
                 <ListBox SelectedIndex="1">
                     <ListBoxItem HorizontalContentAlignment="Stretch">
                         <Expander Name="expSimulation" Header="Simulation">
@@ -75,6 +100,40 @@
                         </Expander>
                     </ListBoxItem>
                     <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expStat" Header="Report">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="6*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Sensors" Grid.Row="0" Grid.Column="0"/>
+                                    <Label Content="Rangers" Grid.Row="1" Grid.Column="0"/>
+                                    <Label Content="All trespassers" Grid.Row="2" Grid.Column="0"/>
+                                    <Label Content="Caught" Grid.Row="3" Grid.Column="0"/>
+                                    <Label Content="Escaped" Grid.Row="4" Grid.Column="0"/>
+                                    <Label Content="Alarms" Grid.Row="5" Grid.Column="0"/>
+
+
+                                    <Label Content="{Binding Stats.NrSensors}" Grid.Row="0" Grid.Column="1"/>
+                                    <Label Content="{Binding Stats.NrRangers}" Grid.Row="1" Grid.Column="1"/>
+                                    <Label Content="{Binding Stats.NrInterlopers}" Grid.Row="2" Grid.Column="1"/>
+                                    <Label Content="{Binding Stats.NrCaught}" Grid.Row="3" Grid.Column="1"/>
+                                    <Label Content="{Binding Stats.NrEscaped}" Grid.Row="4" Grid.Column="1"/>
+                                    <Label Content="{Binding Stats.NrAlarms}" Grid.Row="5" Grid.Column="1"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
                         <Expander Name="expLayers" Header="Layers">
                             <StackPanel Margin="5,5">
                                 <Grid>
@@ -86,13 +145,13 @@
                                     <ComboBox Name="comboBasemap" ItemsSource="{Binding BasemapDict.Keys}" SelectedIndex="1" 
                                               SelectionChanged="comboBasemap_SelectionChanged" SelectedValue="comboBasemap_Selected" 
                                               Margin="5,5" Grid.Column="1"/>
-                                   
+
                                 </Grid>
                                 <StackPanel Margin="5,5">
                                     <CheckBox Name="chkboxRoads" IsChecked="True" Checked="chkboxRoads_Checked" Unchecked="chkboxRoads_Checked">Roads</CheckBox>
                                     <CheckBox Name="chkboxCrossings" IsChecked="True" Checked="chkboxCrossings_Checked" Unchecked="chkboxCrossings_Checked">Crossings</CheckBox>
                                     <CheckBox Name="chkboxRangers" IsChecked="True" Checked="chkboxRangers_Checked" Unchecked="chkboxRangers_Checked">Rangers</CheckBox>
-                                    <CheckBox Name="chkboxInterlopers" IsChecked="True" Checked="chkboxInterlopers_Checked" Unchecked="chkboxInterlopers_Checked">Interlopers</CheckBox>
+                                    <CheckBox Name="chkboxInterlopers" IsChecked="True" Checked="chkboxInterlopers_Checked" Unchecked="chkboxInterlopers_Checked">Trespassers</CheckBox>
                                     <CheckBox Name="chkboxSensors" IsChecked="True" Checked="chkboxSensors_Checked" Unchecked="chkboxSensors_Checked">Sensors</CheckBox>
                                 </StackPanel>
                             </StackPanel>
@@ -102,15 +161,22 @@
                         <Expander Name="expSensors" Header="Sensors">
                             <StackPanel Margin="5,5">
                                 <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*"/>
                                         <ColumnDefinition Width="6*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Label Content="Range" Grid.Column="0"/>
-                                    <Slider x:Name="sldSensorRange"  Value="{Binding SensorRange}" 
-                                            Orientation="Horizontal" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
-                                            AutoToolTipPlacement="BottomRight" Minimum="10" Maximum="50" Grid.Column="1"/>
+                                    <Label Content="Range" Grid.Row="0" Grid.Column="0"/>
+                                    <Slider x:Name="sldSensorRange"  Value="{Binding SensorRange}" Orientation="Horizontal"
+                                            IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="10"
+                                            AutoToolTipPlacement="BottomRight" Minimum="10" Maximum="250" Grid.Row="0" Grid.Column="1"/>
                                 </Grid>
+                                <CheckBox Name="chkboxSensorRange" IsChecked="True" Checked="chkboxSensorRange_Checked" Unchecked="chkboxSensorRange_Checked" Grid.Row="1">
+                                    Show sensors range
+                                </CheckBox>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition/>
@@ -159,6 +225,41 @@
                         </Expander>
                     </ListBoxItem>
                     <ListBoxItem HorizontalContentAlignment="Stretch">
+                        <Expander Name="expInterloper" Header="Trespassers">
+                            <StackPanel Margin="5,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="6*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Speed" Grid.Row="0" Grid.Column="0"/>
+                                    <Slider x:Name="sldInterloperSpeed"  Value="{Binding InterloperSpeed}" 
+                                                Orientation="Horizontal" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
+                                                AutoToolTipPlacement="BottomRight" Minimum="10" Maximum="90" Grid.Row="0" Grid.Column="1"/>
+                                </Grid>
+                                <CheckBox Name="chkboxInterloperVisibility" IsChecked="True" Checked="chkboxInterloperVisibility_Checked" Unchecked="chkboxInterloperVisibility_Checked" Grid.Row="1">
+                                    Show only if in sensor range
+                                </CheckBox>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="57*" />
+                                        <ColumnDefinition Width="53*"/>
+                                        <ColumnDefinition Width="38*"/>
+                                        <ColumnDefinition Width="112*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Name="btnInterloperAdd" Click="btnInterloperAdd_Click" Content="Add trespasser" Margin="5,2" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"/>
+                                    <Button Name="btnInterloperAddRandom" Click="btnInterloperAddRandom_Click" Content="Add random" Margin="5,2" Grid.Row="0" Grid.Column="3"/>
+                                    <Button Name="btnInterloperDel" Click="btnInterloperDel_Click" Content="Remove trespasser" Margin="5,2" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"/>
+                                    <Button Name="btnInterloperDelAll" Click="btnInterloperDelAll_Click" Content="Remove all" Margin="5,2" Grid.Row="1" Grid.Column="3"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </ListBoxItem>
+                    <ListBoxItem HorizontalContentAlignment="Stretch">
                         <Expander Name="expTopology" Header="Topology">
                             <StackPanel Margin="5,5">
                                 <Grid>
@@ -175,24 +276,17 @@
                             </StackPanel>
                         </Expander>
                     </ListBoxItem>
-                    <ListBoxItem HorizontalContentAlignment="Stretch">
-                        <Expander Name="expPursuits" Header="Pursuits">
-                            <StackPanel Margin="5,5">
-                                <ListBox Name="lstboxPursuits">
-                                    <ListBoxItem Content="Unit 1"/>
-                                    <ListBoxItem Content="Unit 4"/>
-                                </ListBox>
-                            </StackPanel>
-                        </Expander>
-                    </ListBoxItem>
                 </ListBox>
             </StackPanel>
         </Expander>
-        <Button x:Name="btnExtent" Content="[  ]" ToolTip="Zoom to road network extent" HorizontalAlignment="Left" Margin="10,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnExtent_Click" VerticalAlignment="Top" Width="28"/>
-        <Button x:Name="btnEditCancel" Content=" X " ToolTip="Cancel edit" HorizontalAlignment="Left" Margin="50,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnEditCancel_Click" VerticalAlignment="Top" Width="28"/>
-        <Button x:Name="btnSelectionClear" Content=" . " ToolTip="Clear selection" HorizontalAlignment="Left" Margin="90,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnSelectionClear_Click" VerticalAlignment="Top" Width="28"/>
-        <Button x:Name="btnSimulationStart" Content=" > " ToolTip="Start simulation" HorizontalAlignment="Left" Margin="130,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnSimulationStart_Click" VerticalAlignment="Top" Width="28"/>
-        <Button x:Name="btnSimulationStop" Content=" | | " ToolTip="Stop simulation" HorizontalAlignment="Left" Margin="170,11,0,0" Opacity="0.5"  Background="#c055c0c0" Click="btnSimulationStop_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnExtent" Content="[  ]" ToolTip="Zoom to road network extent" HorizontalAlignment="Left" Margin="10,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnExtent_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnEditCancel" Content=" X " ToolTip="Cancel edit" HorizontalAlignment="Left" Margin="50,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnEditCancel_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnSelectionClear" Content=" . " ToolTip="Clear selection" HorizontalAlignment="Left" Margin="90,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnSelectionClear_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnSimulationStart" Content=" > " ToolTip="Start simulation" HorizontalAlignment="Left" Margin="130,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnSimulationStart_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnSimulationStop" Content=" | | " ToolTip="Stop simulation" HorizontalAlignment="Left" Margin="170,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnSimulationStop_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnRoutingTest" Content=" ? " ToolTip="Test routing" HorizontalAlignment="Left" Margin="210,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnRoutingTest_Click" VerticalAlignment="Top" Width="28"/>
+        <Button x:Name="btnTrespassersFlow" Content=" T " ToolTip="Constant trespassing" HorizontalAlignment="Left" Margin="250,11,0,0" Opacity="0.75"  Background="MintCream" Click="btnTrespassersFlow_Click" VerticalAlignment="Top" Width="28"/>
+        <TextBox x:Name="msgbox" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,30" Width="400" Height="60" VerticalScrollBarVisibility="Auto" Background="#20000000" Foreground="Black" BorderThickness="1" BorderBrush="Gray"/>
 
     </Grid>
 </Window>

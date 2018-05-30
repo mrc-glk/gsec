@@ -1,6 +1,7 @@
 ﻿using GeoAPI.Geometries;
 using NHibernate;
 using NHibernate.Cfg;
+using NHibernate.Mapping;
 using NHibernate.Spatial.Mapping;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace gsec.model
     public class HSession
     {
         public static ISessionFactory Factory = null;
+        public static ICollection<PersistentClass> ClassMappings = null;
 
         static HSession()
         {
@@ -21,6 +23,7 @@ namespace gsec.model
             c.Configure();
             c.AddAssembly(Assembly.GetCallingAssembly());
             Factory = c.BuildSessionFactory();
+            ClassMappings = c.ClassMappings;
         }
     }
 }

@@ -11,9 +11,10 @@ namespace gsec.model.managers
         private static readonly CrossingManager instance = new CrossingManager();
 
         static CrossingManager() { }
-        private CrossingManager() { }
-
-        public override string GetTable() => "Crossing";
+        private CrossingManager()
+        {
+        }
+        
         public static CrossingManager Instance { get => instance; }
     }
 }

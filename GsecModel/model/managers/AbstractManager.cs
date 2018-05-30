@@ -1,4 +1,5 @@
 ﻿using NHibernate;
+using NHibernate.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,36 @@ using System.Threading.Tasks;
 
 namespace gsec.model.managers
 {
-    public abstract class AbstractManager<T> where T : class
+    public interface IHManager
     {
-        public abstract string GetTable();
+        string GetTable();
+        string GetIdColumn();
+        string GetGeometryColumn();
+    }
+
+    public abstract class AbstractManager<T> : IHManager where T : IDisplayableGeoElement
+    {
+        protected static PersistentClass PersistentClass { get; set; }
+
+        static AbstractManager()
+        {
+            PersistentClass = HSession.ClassMappings.Where(x => x.EntityName == typeof(T).FullName).Single();
+        }
+
+        public string GetTable()
+        {
+            return PersistentClass.Table.Name;
+        }
+
+        public string GetIdColumn()
+        {
+            return PersistentClass.Identifier.ColumnIterator.Single().Text;
+        }
+
+        public string GetGeometryColumn()
+        {
+            return "geom";
+        }
 
         public IList<T> List()
         {
@@ -19,13 +47,14 @@ namespace gsec.model.managers
             try
             {
                 session.BeginTransaction();
-                list = session.CreateQuery("from " + GetTable()).List<T>();
+                list = session.CreateQuery("from " + typeof(T).Name).List<T>();
                 session.Transaction.Commit();
             }
             catch (HibernateException e)
             {
                 Console.WriteLine(e.Message);
                 session.Transaction.Rollback();
+                throw new GsecException("failed to hibernate");
             }
             finally
             {
@@ -45,11 +74,13 @@ namespace gsec.model.managers
                 session.BeginTransaction();
                 id = (long)session.Save(obj);
                 session.Transaction.Commit();
+                obj.ID = id;
             }
             catch (HibernateException e)
             {
                 Console.WriteLine(e.Message);
                 session.Transaction.Rollback();
+                throw new GsecException("failed to hibernate");
             }
             finally
             {
@@ -62,7 +93,7 @@ namespace gsec.model.managers
         public T Read(long id)
         {
             ISession session = HSession.Factory.OpenSession();
-            T obj = null;
+            T obj = default(T);
 
             try
             {
@@ -74,6 +105,7 @@ namespace gsec.model.managers
             {
                 Console.WriteLine(e.Message);
                 session.Transaction.Rollback();
+                throw new GsecException("failed to hibernate");
             }
             finally
             {
@@ -97,6 +129,7 @@ namespace gsec.model.managers
             {
                 Console.WriteLine(e.Message);
                 session.Transaction.Rollback();
+                throw new GsecException("failed to hibernate");
             }
             finally
             {
@@ -111,13 +144,20 @@ namespace gsec.model.managers
             try
             {
                 session.BeginTransaction();
-                session.Delete(obj);
+                //session.Delete(obj);
+                var queryString = string.Format("DELETE {0} WHERE id = :id", typeof(T));
+                session.CreateQuery(queryString)
+                       .SetParameter("id", obj.ID)
+                       .ExecuteUpdate();
+
                 session.Transaction.Commit();
             }
             catch (HibernateException e)
             {
                 Console.WriteLine(e.Message);
                 session.Transaction.Rollback();
+                throw new GsecException("failed to hibernate");
+                //Console.WriteLine("!! Failed to hibernate");
             }
             finally
             {

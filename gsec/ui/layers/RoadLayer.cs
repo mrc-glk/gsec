@@ -22,13 +22,7 @@ namespace gsec.ui.layers
             foreach (Road road in Elements)
             {
                 GenerateGraphicFor(road);
-                BaseOverlay.Graphics.Add(road.Graphic);
             }
-        }
-
-        public override void RemoveElement(Road element)
-        {
-            throw new NotImplementedException();
         }
 
         public override void Select(Road element)
@@ -44,8 +38,8 @@ namespace gsec.ui.layers
         protected override void GenerateGraphicFor(Road element)
         {
             Polyline polyline = element.Geom.ToEsriPolyline();
-            Graphic graphic = new Graphic(polyline, GeneralRenderers.RoadSymbol);
-            element.Graphic = graphic;
+            element.Graphic = new Graphic(polyline, GeneralRenderers.RoadSymbol);
+            BaseOverlay.Graphics.Add(element.Graphic);
         }
     }
 }

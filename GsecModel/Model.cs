@@ -17,6 +17,18 @@ namespace gsec
         public List<Pursuit> Pursuits;
         public List<Road> Roads;
         public List<Crossing> Crossings;
+        public List<SingleRoute> Routes;
+
+        public static Dictionary<Type, IHManager> Managers = new Dictionary<Type, IHManager>
+        {
+            { typeof(Ranger), RangerManager.Instance },
+            { typeof(Interloper), InterloperManager.Instance },
+            { typeof(Sensor), SensorManager.Instance },
+            { typeof(Pursuit), PursuitManager.Instance },
+            { typeof(Road), RoadManager.Instance },
+            { typeof(Crossing), CrossingManager.Instance },
+            { typeof(SingleRoute), SingleRouteManager.Instance },
+        };
 
         public Model()
         {
@@ -26,6 +38,7 @@ namespace gsec
 
         public void Load()
         {
+            Routes = SingleRouteManager.Instance.List() as List<SingleRoute>;
             Rangers = RangerManager.Instance.List() as List<Ranger>;
             Roads = RoadManager.Instance.List() as List<Road>;
             Crossings = CrossingManager.Instance.List() as List<Crossing>;

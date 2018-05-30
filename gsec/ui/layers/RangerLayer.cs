@@ -1,7 +1,7 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.UI;
 using gsec.model;
-using gsec.model.managers;
+using gsec.ui.animations;
 using gsec.ui.events;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,10 @@ using System.Threading.Tasks;
 namespace gsec.ui.layers
 {
     public class RangerLayer : AbstractLayer<Ranger>
-    {        
+    {
+        Dictionary<Ranger, PursuitAnimation> pursuitAnimations = new Dictionary<Ranger, PursuitAnimation>();
+        Dictionary<Ranger, FineAnimation> fineAnimations = new Dictionary<Ranger, FineAnimation>();
+
         public RangerLayer(List<Ranger> elements) : base(elements)
         {
         }
@@ -24,33 +27,30 @@ namespace gsec.ui.layers
             foreach (Ranger ranger in Elements)
             {
                 GenerateGraphicFor(ranger);
-                BaseOverlay.Graphics.Add(ranger.Graphic);
                 // route? buffer?
             }
         }
 
-        public override void RemoveElement(Ranger element)
+        protected override void RemoveElementInternal(Ranger element)
         {
             BaseOverlay.Graphics.Remove(element.Graphic);
             BaseOverlay.Graphics.Remove(element.RangeGraphic);
 
-            RangerManager.Instance.Delete(element);
+            Elements.Remove(element);
+            element.Delete();
         }
 
-        public override void AddElement(MapPoint position)
+        protected override Ranger AddElementInternal(MapPoint position)
         {
             Ranger ranger = new Ranger();
             ranger.Position = position.ToNtsPoint();
             ranger.Name = "newranger";
-            ranger.State = RangerState.Free;
+            ranger.RState = RangerState.Free;
+            ranger.Create();
 
-            long id = RangerManager.Instance.Create(ranger);
-            if (id != -1)
-            {
-                GenerateGraphicFor(ranger);
-                BaseOverlay.Graphics.Add(ranger.Graphic);
-                Elements.Add(ranger);
-            }
+            GenerateGraphicFor(ranger);
+            Elements.Add(ranger);
+            return ranger;
         }
 
         public override void Select(Ranger element)
@@ -68,10 +68,24 @@ namespace gsec.ui.layers
         protected override void GenerateGraphicFor(Ranger element)
         {
             MapPoint position = element.Position.ToEsriPoint();
-            Graphic graphic = new Graphic(position, GeneralRenderers.RangerSymbol);
-            element.Graphic = graphic;
+            element.Graphic = new Graphic(position, GeneralRenderers.RangerPicSymbol);
+            BaseOverlay.Graphics.Add(element.Graphic);
+        }
 
-            // range graphic is created on-demand only
+        public void ShowFineAnimation(Ranger ranger)
+        {
+            if (fineAnimations.ContainsKey(ranger) == false)
+            {
+                FineAnimation fine = new FineAnimation(ranger, FineHandled);
+                fineAnimations.Add(ranger, fine);
+                fine.Start();
+            }
+        }
+
+        private void FineHandled(BaseAnimation anim)
+        {
+            var ranger = fineAnimations.FirstOrDefault(x => x.Value == anim).Key;
+            fineAnimations.Remove(ranger);
         }
     }
 }

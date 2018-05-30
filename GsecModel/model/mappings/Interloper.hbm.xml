@@ -9,13 +9,24 @@
       </generator>
     </id>
 
-    <property name="Position" column="position">
+    <property name="Position" column="geom">
       <type name="NHibernate.Spatial.Type.GeometryType, NHibernate.Spatial">
         <param name="srid">4326</param>
         <param name="subtype">POINT</param>
       </type>
     </property>
-
+    <!--<property name="Route" column="route">
+      <type name="NHibernate.Spatial.Type.GeometryType, NHibernate.Spatial">
+        <param name="srid">4326</param>
+        <param name="subtype">LINE</param>
+      </type>
+    </property>-->
+    <!--<many-to-one name="Route" column="routeid" cascade="save-update, delete" unique="true" class="SingleRoute" not-null="false"/>-->
+    <!--
+    <many-to-one name="Route" column="routeid" cascade="save-update, delete, delete-orphan" unique="true" class="SingleRoute" not-null="false"/>
+    -->
+    <many-to-one name="Route" column="routeid" cascade="save-update, delete, delete-orphan" unique="true" class="SingleRoute" not-null="false"/>
+    
   </class>
   
 </hibernate-mapping>

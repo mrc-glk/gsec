@@ -11,9 +11,10 @@ namespace gsec.model.managers
         private static readonly RangerManager instance = new RangerManager();
 
         static RangerManager() { }
-        private RangerManager() { }
+        private RangerManager()
+        {
+        }
 
-        public override string GetTable() => "Ranger";
         public static RangerManager Instance { get => instance; }
     }
 }

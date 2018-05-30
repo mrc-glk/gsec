@@ -14,6 +14,7 @@ using gsec.routing;
 using gsec.ui.layers;
 using Esri.ArcGISRuntime.Data;
 using gsec.ui.events;
+using gsec.ui.animations;
 
 namespace gsec.ui
 {
@@ -23,6 +24,13 @@ namespace gsec.ui
         OpenStreetMap,
         NationalGeographic,
         StreetsVector
+    }
+
+    public enum PursuitPolicy
+    {
+        FIRST_FREE,
+        NEAREST,
+        COMBINED,
     }
 
     public class ViewModel
@@ -38,14 +46,20 @@ namespace gsec.ui
         public RangerLayer RangerLayer { get; }
         public RoadLayer RoadLayer { get; }
         public SensorLayer SensorLayer { get; }
-        
+
         public Map Map { get; set; }
         
         public event RangerSelectionEventHandler RangerSelected;
         public event SensorSelectionEventHandler SensorSelected;
+        public Action<string> ShowMessage = null;
+        
+        public Dictionary<string, IRoutingAlgo> RoutingAlgorithms { get; }
+        public IRoutingAlgo Routing { get; set; }
 
-        public Dictionary<string, Func<Ranger, Road, Crossing, SingleRoute>> RoutingAlgorithms { get; }
-        public Func<Ranger, Road, Crossing, SingleRoute> CalculateRoute { get; set; }
+        public PursuitPolicy Policy { get; set; } = PursuitPolicy.NEAREST;
+
+        public Stat Stats { get; set; }
+
         public Simulation Simulation { get; set; }
 
         public int RangerSpeed
@@ -61,7 +75,7 @@ namespace gsec.ui
         public int SensorRange
         {
             get { return Sensor.Range; }
-            set { Sensor.Range = value; }
+            set { Sensor.Range = value; SensorLayer.UpdateRanges(); }
         }
         public int TimeScale
         {
@@ -70,6 +84,7 @@ namespace gsec.ui
         }
 
         public IDisplayableGeoElement GeoElementContext { get; set; }
+
         private EditModeType? editMode;
 
         public EditModeType? GetEditMode()
@@ -88,7 +103,11 @@ namespace gsec.ui
             }
         }
 
-        public ViewModel()
+        private static readonly ViewModel instance = new ViewModel();
+        public static ViewModel Instance { get => instance; }
+
+        static ViewModel() { }
+        private ViewModel()
         {
             BasemapDict = new Dictionary<BasemapChoice, Func<Basemap>>()
             {
@@ -107,9 +126,12 @@ namespace gsec.ui
             RangerLayer = new RangerLayer(Model.Rangers);
             InterloperLayer = new InterloperLayer(Model.Interlopers);
 
-            RoutingAlgorithms = new Dictionary<string, Func<Ranger, Road, Crossing, SingleRoute>>()
+            findCrossingsLeafs();
+            
+            RoutingAlgorithms = new Dictionary<string, IRoutingAlgo>()
             {
-                { "Dijkstra (pgRouting)", PgRoutingDijkstra.Calculate },
+                { "Dijkstra (pgRouting)", new PgRoutingDijkstra() },
+                { "A* (pgRouting)", new PgRoutingAStar() },
             };
 
             EditOverlay = createEditOverlay();
@@ -117,6 +139,28 @@ namespace gsec.ui
             RouteOverlay = new GraphicsOverlay();
 
             Simulation = new Simulation(this);
+
+            Stats = new Stat();
+            Stats.NrCaught = 0;
+            Stats.NrEscaped = 0;
+            Stats.NrInterlopers = InterloperLayer.Elements.Count();
+            Stats.NrRangers = RangerLayer.Elements.Count();
+            Stats.NrSensors = SensorLayer.Elements.Count();
+            Stats.NrAlarms = 0;
+        }
+
+        private void findCrossingsLeafs()
+        {
+            List<Crossing> leafs = new List<Crossing>();
+
+            foreach (var crossing in CrossingLayer.Elements)
+            {
+                IEnumerable<Road> elements = RoadLayer.Elements.Where(r => GeometryEngine.Intersects(r.Graphic.Geometry, crossing.Graphic.Geometry));
+                if (elements.Count() == 1)
+                    leafs.Add(crossing);
+            }
+
+            CrossingLayer.Leafs = leafs;
         }
 
         private GraphicsOverlay createEditOverlay()
@@ -160,24 +204,35 @@ namespace gsec.ui
             switch (editMode.Value)
             {
                 case EditModeType.RangerAdd:
+                    Log(Messages.SELECT_LOCATION);
                     SnapToNearestPointInLayer(location, RoadLayer);
                     break;
                 case EditModeType.RangerDel:
+                    Log(Messages.SELECT_RANGER);
                     SnapToNearestPointInLayer(location, RangerLayer);
                     break;
                 case EditModeType.SensorAdd:
+                    Log(Messages.SELECT_LOCATION);
                     SnapToNearestPointInLayer(location, RoadLayer);
                     break;
                 case EditModeType.SensorDel:
+                    Log(Messages.SELECT_SENSOR);
                     SnapToNearestPointInLayer(location, SensorLayer);
                     break;
                 case EditModeType.InterloperAdd:
-                    SnapToNearestPointInLayer(location, RoadLayer);
+                    Log(Messages.SELECT_LOCATION);
+                    SnapToNearestPointInLayer(location, CrossingLayer);
                     break;
                 case EditModeType.InterloperDel:
+                    Log(Messages.SELECT_INTERLOPER);
                     SnapToNearestPointInLayer(location, InterloperLayer);
                     break;
                 case EditModeType.RangerDriveTo:
+                    Log(Messages.SELECT_DESTINATION);
+                    SnapToNearestPointInLayer(location, CrossingLayer);
+                    break;
+                case EditModeType.InterloperDriveTo:
+                    Log(Messages.SELECT_DESTINATION);
                     SnapToNearestPointInLayer(location, CrossingLayer);
                     break;
                 default:
@@ -202,15 +257,19 @@ namespace gsec.ui
                 case EditModeType.SensorDel:
                     RemoveSensorAtSelectedLocation();
                     break;
-                case EditModeType.InterloperAdd:
-                    AddInterloperAtSelectedLocation();
-                    break;
                 case EditModeType.InterloperDel:
                     RemoveInterloperAtSelectedLocation();
                     break;
                 case EditModeType.RangerDriveTo:
-                    LeadRangerToSelectedLocation(GeoElementContext as Ranger);
+                    LeadMobileToSelectedLocation(GeoElementContext as Ranger);
                     break;
+                case EditModeType.InterloperDriveTo:
+                    LeadMobileToSelectedLocation(GeoElementContext as Interloper);
+                    break;
+                case EditModeType.InterloperAdd:
+                    AddInterloperAtSelectedLocation();
+                    SetEditMode(EditModeType.InterloperDriveTo);
+                    return; // no break here as we continue with different edit mode. i know...
                 default:
                     throw new GsecException("Unknown event: " + editMode.Value);
             }
@@ -254,6 +313,12 @@ namespace gsec.ui
         {
             SensorSelected?.Invoke(this, new SensorSelectionEventArgs(sensor));
         }
+        
+        public void Log(string fmt, params object[] args)
+        {
+            string msg = string.Format(fmt, args);
+            ShowMessage?.Invoke(msg);
+        }
 
         public void SnapToNearestPointInLayer<T>(MapPoint mapPoint, AbstractLayer<T> layer) where T : IDisplayableGeoElement
         {
@@ -271,13 +336,6 @@ namespace gsec.ui
         {
             IList<Graphic> graphics = layer.GetBaseGraphics();
             return GeoUtil.GetRandomPointInGraphicsCollection(graphics);
-        }
-
-        public void AddRandomElement<T,K>(AbstractLayer<T> targetLayer, AbstractLayer<K> randomLayer)
-            where T : IDisplayableGeoElement where K : IDisplayableGeoElement
-        {
-            MapPoint randomLocation = GetRandomPointInLayer(randomLayer);
-            targetLayer.AddElement(randomLocation);
         }
 
         public void ClearAllSelections()
@@ -298,29 +356,92 @@ namespace gsec.ui
         public void StartSimulation()
         {
             Simulation.Start();
+            Log(Messages.SIM_STARTED);
         }
 
         public void StopSimulation()
         {
             Simulation.Stop();
+            Log(Messages.SIM_STOPPED);
+        }
+
+        public T AddRandomElement<T, K>(AbstractLayer<T> targetLayer, AbstractLayer<K> randomLayer)
+            where T : IDisplayableGeoElement where K : IDisplayableGeoElement
+        {
+            MapPoint randomLocation = GetRandomPointInLayer(randomLayer);
+            T elem = targetLayer.AddElement(randomLocation);
+            return elem;
+        }
+
+        public void AddRangerRandom()
+        {
+            AddRandomElement(RangerLayer, RoadLayer);
+            Log(Messages.RANGER_ADDED);
+
+            Stats.NrRangers++;
+        }
+
+        public void AddSensorRandom()
+        {
+            AddRandomElement(SensorLayer, RoadLayer);
+            Log(Messages.SENSOR_ADDED);
+            
+            Stats.NrSensors++;
+        }
+
+        public void AddInterloperRandom()
+        {
+            Crossing src, dst;
+            Random random = new Random();
+
+            do
+            {
+                src = CrossingLayer.Leafs[random.Next(0, CrossingLayer.Leafs.Count)];
+                dst = CrossingLayer.Leafs[random.Next(0, CrossingLayer.Leafs.Count)];
+            } while (src == dst);
+
+            Interloper interloper = InterloperLayer.AddElement(src.Graphic.Geometry as MapPoint);
+            SingleRoute route = Routing.GetRouteFromCrossing(null, src, dst);
+            interloper.Route = route;
+            route.Create();
+            route.Graphic = new Graphic(route.Geom.ToEsriPolyline(), GeneralRenderers.RouteSymbol);
+            interloper.Update();
+
+            Log(Messages.INTERLOPER_ADDED);
+
+            Stats.NrInterlopers++;
         }
 
         public void AddRangerAtSelectedLocation()
         {
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
             RangerLayer.AddElement(location.ToWgs84());
+
+            Log(Messages.RANGER_ADDED);
+
+            Stats.NrRangers++;
         }
 
         public void AddSensorAtSelectedLocation()
         {
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
             SensorLayer.AddElement(location.ToWgs84());
+
+            Log(Messages.SENSOR_ADDED);
+
+            Stats.NrSensors++;
         }
         
         public void AddInterloperAtSelectedLocation()
         {
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
-            InterloperLayer.AddElement(location.ToWgs84());
+            Interloper interloper = InterloperLayer.AddElement(location.ToWgs84());
+            GeoElementContext = interloper;
+            // XXXXXXXXXXXXXXXXXXX find route
+
+            Log(Messages.INTERLOPER_ADDED);
+
+            Stats.NrInterlopers++;
         }
 
         public void RemoveRangerAtSelectedLocation()
@@ -328,6 +449,8 @@ namespace gsec.ui
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
             Ranger ranger = RangerLayer.ByPosition(location.ToWgs84());
             RangerLayer.RemoveElement(ranger);
+
+            Log(Messages.RANGERS_REMOVED);
         }
 
         public void RemoveSensorAtSelectedLocation()
@@ -335,6 +458,8 @@ namespace gsec.ui
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
             Sensor sensor = SensorLayer.ByPosition(location.ToWgs84());
             SensorLayer.RemoveElement(sensor);
+
+            Log(Messages.SENSORS_REMOVED);
         }
 
         public void RemoveInterloperAtSelectedLocation()
@@ -342,29 +467,120 @@ namespace gsec.ui
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
             Interloper interloper = InterloperLayer.ByPosition(location.ToWgs84());
             InterloperLayer.RemoveElement(interloper);
+
+            Log(Messages.INTERLOPERS_REMOVED);
         }
 
-        public void LeadRangerToCrossing(Ranger ranger, Crossing destination)
+        public void RemoveAllInterlopers()
         {
-            Road currentRoad = RoadLayer.ByPosition(ranger.Graphic.Geometry as MapPoint); // what if ranger is on roads crossing?
-            
-            SingleRoute route = CalculateRoute(ranger, currentRoad, destination);
+            InterloperLayer.RemoveAll();
+            Log(Messages.INTERLOPERS_REMOVED);
+        }
 
+        public void RemoveAllRangers()
+        {
+            RangerLayer.RemoveAll();
+            Log(Messages.RANGERS_REMOVED);
+        }
+
+        public void RemoveAllSensors()
+        {
+            SensorLayer.RemoveAll();
+            Log(Messages.SENSORS_REMOVED);
+        }
+
+        public void LeadMobileToCrossing(MobileUnit unit, Crossing dst)
+        {
+            SingleRoute route;
+
+            unit.UpdateDbPosition();
+
+            Crossing crossing = CrossingLayer.ByPosition(unit.Graphic.Geometry as MapPoint, 10);
+            if (crossing != null)
+            {
+                route = Routing.GetRouteFromCrossing(unit, crossing, dst);
+            }
+            else
+            {
+                Road currentRoad = RoadLayer.ByPosition(unit.Graphic.Geometry as MapPoint, 3);
+                if (currentRoad != null)
+                {
+                    route = Routing.GetRouteFromMidRoad(unit, currentRoad, dst);
+                }
+                else
+                {
+                    route = null;
+                    Console.WriteLine("SOMETHING WROOOOONG");
+                }
+            }
+
+            if (route == null)
+            {
+                Console.WriteLine("NO ROUTE HACK!");
+                return;
+            }
+
+            unit.Route = route;
+            unit.Route.Create();
+            unit.Update();
+
+            NewRouteAnimation anim = new NewRouteAnimation(unit.Route, null);
+            anim.Start();
+            
+            // TODO UNCOMMENT
             // testing only
-            Polyline geom = route.Geom.ToEsriPolyline();
+            /*Polyline geom = route.Geom.ToEsriPolyline();
             Graphic g = new Graphic(geom, GeneralRenderers.RouteSymbol);
             RouteOverlay.Graphics.Add(g);
             g.IsSelected = true;
+            */
+
+            Log(Messages.NEW_ROUTE);
         }
 
-        public void LeadRangerToSelectedLocation(Ranger ranger)
+        public void LeadMobileToSelectedLocation(MobileUnit unit)
         {
             MapPoint location = EditSelectionOverlay.SelectedGraphics.First().Geometry as MapPoint;
             Crossing destination = CrossingLayer.ByPosition(location);
 
-            LeadRangerToCrossing(ranger, destination);
-
+            LeadMobileToCrossing(unit, destination);
             GeoElementContext = null;
+        }
+
+        public void TestRouting()
+        {
+            int i = 0;
+
+            List<Crossing> crossings = CrossingLayer.Elements;
+            Random random = new Random();
+            PgRoutingAStar astar = new PgRoutingAStar();
+            PgRoutingDijkstra dijkstra = new PgRoutingDijkstra();
+
+            while (i < 1024)
+            {
+                Crossing c1 = crossings[random.Next(0, crossings.Count)];
+                Crossing c2 = crossings[random.Next(0, crossings.Count)];
+                if (c1 == c2)
+                    continue;
+
+                SingleRoute rd = dijkstra.GetRouteFromCrossing(null, c1, c2);
+                SingleRoute ra = astar.GetRouteFromCrossing(null, c1, c2);
+                
+                if (rd.Length != ra.Length)
+                {
+                    Graphic gd = new Graphic(rd.Geom.ToEsriPolyline(), GeneralRenderers.RouteSymbol);
+                    RouteOverlay.Graphics.Add(gd);
+
+                    Graphic ga = new Graphic(rd.Geom.ToEsriPolyline(), GeneralRenderers.AltRouteSymbol);
+                    RouteOverlay.Graphics.Add(ga);
+                    Console.WriteLine("found difference. crossings {0} {1}", c1.ID, c2.ID);
+                    break;
+                }
+
+                i++;
+            }
+
+            Console.WriteLine("TestRouting finished");
         }
     }
 }

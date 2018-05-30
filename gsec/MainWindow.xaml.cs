@@ -16,6 +16,7 @@ using System.Windows.Controls;
 using System.Timers;
 using System.ComponentModel;
 using gsec.ui.events;
+using System.Windows.Input;
 
 namespace gsec
 {
@@ -30,9 +31,11 @@ namespace gsec
 
         public MainWindow()
         {
+            Loaded += MainWindow_Loaded;
+
             InitializeComponent();
 
-            viewModel = new ViewModel();
+            viewModel = ViewModel.Instance;
             mouseTimer = new MajorTimer(20);
 
             Initialize();
@@ -64,9 +67,52 @@ namespace gsec
             GsecMapView.ViewpointChanged += GsecMapView_ViewpointChanged;
 
             GsecMapView.MouseMove += GsecMapView_MouseMove;
-            
+
             viewModel.RangerSelected += gsecRanger_PoppedUp;
+            viewModel.SensorSelected += gsecSensor_PoppedUp;
             Closing += OnWindowClosing;
+
+            viewModel.ShowMessage = this.showMessage;
+
+            AppDomain.CurrentDomain.UnhandledException += LifeSaver;
+        }
+
+        private void LifeSaver(object sender, UnhandledExceptionEventArgs e)
+        {
+            string exmsg = string.Format("Uncaught exception: {0}", e.ToString());
+            showMessage(exmsg);
+        }
+
+        private string lastMsg = null;
+        private void showMessage(string message)
+        {
+            if (message == null || message.Equals(lastMsg))
+            {
+                return;
+            }
+
+            lastMsg = message;
+
+            string date = DateTime.Now.ToString("H:mm:ss");
+
+            this.Dispatcher.Invoke(() =>
+            {
+                msgbox.Text = msgbox.Text + date + " " + message + Environment.NewLine;
+
+                var old = FocusManager.GetFocusedElement(this);
+
+                msgbox.Focus();
+                msgbox.CaretIndex = msgbox.Text.Length;
+                msgbox.ScrollToEnd();
+
+                FocusManager.SetFocusedElement(this, old);
+            });
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            expMenu_Expanded(null, null);
+            expMenu_Collapsed(null, null);
         }
 
         private void GsecMapView_ViewpointChanged(object sender, EventArgs e)
@@ -107,36 +153,51 @@ namespace gsec
         {
             bool? isChecked = (sender as CheckBox).IsChecked;
             if (IsLoaded && isChecked.HasValue)
-                viewModel.RoadLayer.SetVisible(isChecked.Value);
+                viewModel.RoadLayer.SetVisibility(isChecked.Value);
         }
 
         private void chkboxCrossings_Checked(object sender, RoutedEventArgs e)
         {
             bool? isChecked = (sender as CheckBox).IsChecked;
             if (IsLoaded && isChecked.HasValue)
-                viewModel.CrossingLayer.SetVisible(isChecked.Value);
+                viewModel.CrossingLayer.SetVisibility(isChecked.Value);
         }
 
         private void chkboxRangers_Checked(object sender, RoutedEventArgs e)
         {
             bool? isChecked = (sender as CheckBox).IsChecked;
             if (IsLoaded && isChecked.HasValue)
-                viewModel.RangerLayer.SetVisible(isChecked.Value);
+                viewModel.RangerLayer.SetVisibility(isChecked.Value);
         }
 
         private void chkboxInterlopers_Checked(object sender, RoutedEventArgs e)
         {
             bool? isChecked = (sender as CheckBox).IsChecked;
             if (IsLoaded && isChecked.HasValue)
-                viewModel.InterloperLayer.SetVisible(isChecked.Value);
+                viewModel.InterloperLayer.SetVisibility(isChecked.Value);
         }
 
         private void chkboxSensors_Checked(object sender, RoutedEventArgs e)
         {
             bool? isChecked = (sender as CheckBox).IsChecked;
             if (IsLoaded && isChecked.HasValue)
-                viewModel.SensorLayer.SetVisible(isChecked.Value);
+                viewModel.SensorLayer.SetVisibility(isChecked.Value);
         }
+        
+        private void chkboxSensorRange_Checked(object sender, RoutedEventArgs e)
+        {
+            bool? isChecked = (sender as CheckBox).IsChecked;
+            if (IsLoaded && isChecked.HasValue)
+                viewModel.SensorLayer.SetRangeVisibility(isChecked.Value);
+        }
+
+        private void chkboxInterloperVisibility_Checked(object sender, RoutedEventArgs e)
+        {
+            bool? isChecked = (sender as CheckBox).IsChecked;
+            if (IsLoaded && isChecked.HasValue)
+                viewModel.InterloperLayer.ShowOnlyWithinSensorRange = isChecked.Value;
+        }
+
         #endregion Checkboxes
         #region AdminButtons
         private void btnSensorAdd_Click(object sender, RoutedEventArgs e)
@@ -161,22 +222,42 @@ namespace gsec
         
         private void btnSensorDelAll_Click(object sender, RoutedEventArgs e)
         {
-            viewModel.SensorLayer.RemoveAll();
+            viewModel.RemoveAllSensors();
         }
 
         private void btnSensorAddRandom_Click(object sender, RoutedEventArgs e)
         {
-            viewModel.AddRandomElement(viewModel.SensorLayer, viewModel.RoadLayer);
+            viewModel.AddSensorRandom();
         }
 
         private void btnRangerAddRandom_Click(object sender, RoutedEventArgs e)
         {
-            viewModel.AddRandomElement(viewModel.RangerLayer, viewModel.RoadLayer);
+            viewModel.AddRangerRandom();
         }
 
         private void btnRangerDelAll_Click(object sender, RoutedEventArgs e)
         {
-            viewModel.RangerLayer.RemoveAll();
+            viewModel.RemoveAllRangers();
+        }
+
+        private void btnInterloperAdd_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.SetEditMode(EditModeType.InterloperAdd);
+        }
+
+        private void btnInterloperAddRandom_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.AddInterloperRandom();
+        }
+
+        private void btnInterloperDel_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.SetEditMode(EditModeType.InterloperDel);
+        }
+
+        private void btnInterloperDelAll_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.RemoveAllInterlopers();
         }
 
         private void btnExtent_Click(object sender, RoutedEventArgs e)
@@ -203,11 +284,43 @@ namespace gsec
         {
             viewModel.StopSimulation();
         }
-        
+
+        Random rand = new Random();
+        private void btnTrespassersFlow_Click(object sender, RoutedEventArgs e)
+        {
+            Timer timer = new Timer();
+            timer.Interval = 100;
+            timer.Enabled = true;
+            timer.Elapsed += TrespassersTimer_Elapsed;
+            timer.Start();
+        }
+
+        private void TrespassersTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            int v = rand.Next();
+            if (v % 50 == 0)
+            {
+                viewModel.AddInterloperRandom();
+            }
+        }
+
         private void btnBuildTopology_Click(object sender, RoutedEventArgs e)
         {
-           // do stuff
+            throw new GsecException("not implemented");
         }
+        
+        private void btnRoutingTest_Click(object sender, RoutedEventArgs e)
+        {
+            Console.WriteLine("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+            //viewModel.TestRouting();
+            //viewModel.AddInterloperRandom();
+            //Sensor sensor = viewModel.SensorLayer.ByID(57);
+            //viewModel.SensorLayer.RaiseAlarm(sensor);
+            viewModel.StopSimulation();
+            viewModel.AddInterloperRandom();
+            viewModel.StartSimulation();
+        }
+
         #endregion AdminButtons
         #region ListBoxes
 
@@ -222,28 +335,22 @@ namespace gsec
         private void expMenu_Expanded(object sender, RoutedEventArgs e)
         {
             // I am so bad at this...
-            if (e.OriginalSource == expMenu)
-            {
-                expMenuPanel.IsHitTestVisible = true;
-                expMenuPanel.Visibility = Visibility.Visible;
+            expMenuPanel.IsHitTestVisible = true;
+            expMenuPanel.Visibility = Visibility.Visible;
 
-                Thickness newMargin = expMenu.Margin;
-                newMargin.Bottom -= expMenuPanel.ActualHeight; // don't know why
-                expMenu.Margin = newMargin;
-            }
+            Thickness newMargin = expMenu.Margin;
+            newMargin.Bottom -= expMenuPanel.ActualHeight; // don't know why
+            expMenu.Margin = newMargin;
         }
 
         private void expMenu_Collapsed(object sender, RoutedEventArgs e)
         {
-            if (e.OriginalSource == expMenu)
-            {
-                expMenuPanel.IsHitTestVisible = false;
-                expMenuPanel.Visibility = Visibility.Hidden;
+            expMenuPanel.IsHitTestVisible = false;
+            expMenuPanel.Visibility = Visibility.Hidden;
                 
-                Thickness newMargin = expMenu.Margin;
-                newMargin.Bottom += expMenuPanel.ActualHeight;
-                expMenu.Margin = newMargin;
-            }
+            Thickness newMargin = expMenu.Margin;
+            newMargin.Bottom += expMenuPanel.ActualHeight;
+            expMenu.Margin = newMargin;
         }
 
         #endregion Expanders
@@ -260,7 +367,7 @@ namespace gsec
         private void comboRoutingAlgo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var selectedItem = (string)(sender as ComboBox).SelectedItem;
-            viewModel.CalculateRoute = viewModel.RoutingAlgorithms[selectedItem];
+            viewModel.Routing = viewModel.RoutingAlgorithms[selectedItem];
         }
         #endregion Comboboxes
        
@@ -282,6 +389,27 @@ namespace gsec
         {
             popupRanger.Visibility = Visibility.Collapsed;
             popupRanger.DataContext = null;
+        }
+
+        private void gsecSensor_PoppedUp(object sender, SensorSelectionEventArgs e)
+        {
+            popupSensor.DataContext = e.Sensor;
+            popupSensor.Visibility = Visibility.Visible;
+        }
+
+        private void btnPopupSensorRaiseAlarm_Click(object sender, RoutedEventArgs e)
+        {
+            Sensor sensor = popupSensor.DataContext as Sensor;
+            viewModel.SensorLayer.RaiseAlarm(sensor);
+
+            popupSensor.Visibility = Visibility.Collapsed;
+            popupSensor.DataContext = null;
+        }
+
+        private void btnPopupSensorClose_Click(object sender, RoutedEventArgs e)
+        {
+            popupSensor.Visibility = Visibility.Collapsed;
+            popupSensor.DataContext = null;
         }
 
         private void OnWindowClosing(object sender, CancelEventArgs e)
