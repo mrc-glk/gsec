@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" auto-import="true" assembly="GsecModel" namespace="gsec.model">
+
+  <class name="SingleRoute" lazy="false" table="singleroute">
+    <id name="ID" column="id">
+      <generator class="sequence">
+        <param name="sequence">seqroute</param>
+      </generator>
+    </id>
+
+    <property name="Geom" column="geom">
+      <type name="NHibernate.Spatial.Type.GeometryType, NHibernate.Spatial">
+        <param name="srid">4326</param>
+        <param name="subtype">LINE</param>
+      </type>
+    </property>
+    <!--<property name="Length" formula="(SELECT ST_Length(geom, false))"/>-->
+    <property name="Length" column="length"/>
+    <property name="Progress" column="progress"/>
+
+  </class>
+
+</hibernate-mapping>
